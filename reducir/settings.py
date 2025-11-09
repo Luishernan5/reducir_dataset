@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-@9!q7l@a@9dgxar-zq(27a(jaww@!3^a-tp=oow(vakb-j6xwl
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['https://reducir-dataset.onrender.com']
 
 
 # Application definition
