@@ -1,10 +1,10 @@
-import io
-import base64
+from django.shortcuts import render
 import pandas as pd
 import matplotlib.pyplot as plt
-from django.shortcuts import render
+import base64
+import io
+import arff
 from sklearn.model_selection import train_test_split
-import arff   # liac-arff
 
 
 def fig_to_base64():
@@ -17,56 +17,61 @@ def fig_to_base64():
 
 
 def load_kdd_dataset_from_fileobj(file_obj):
-    raw = file_obj.read()
-    text = raw.decode('utf-8', errors='ignore')
+    # Leer archivo como texto (no bytes)
+    text = file_obj.read().decode('utf-8', errors='ignore')
 
-    parsed = arff.loads(text)
-    attributes = [a[0] for a in parsed['attributes']]
-    data = parsed['data']
+    # Cargar ARFF
+    arff_data = arff.loads(text)
 
-    df = pd.DataFrame(data, columns=attributes)
+    # Convertir a DataFrame
+    df = pd.DataFrame(arff_data['data'],
+                      columns=[attr[0] for attr in arff_data['attributes']])
     return df
 
 
 def upload_file(request):
     graphs = []
-    graph_titles = []
-    columns = []
-    rows = 0
+    titles = []
+    rows = None
+    columns = None
+    df_html = None
 
-    if request.method == 'POST' and request.FILES.get('file'):
-        uploaded = request.FILES['file']
+    if request.method == "POST" and request.FILES.get("file"):
+        uploaded = request.FILES["file"]
+
+        # Cargar el dataset ARFF
         df = load_kdd_dataset_from_fileobj(uploaded)
 
         columns = df.columns.tolist()
         rows = len(df)
 
-        # dividir el dataset
+        # Mostrar primeras 20 filas
+        df_html = df.head(20).to_html(
+            classes="table table-striped table-bordered",
+            index=False
+        )
+
+        # Separación train/val/test
         train_set, temp_set = train_test_split(df, test_size=0.4, random_state=42)
         val_set, test_set = train_test_split(temp_set, test_size=0.5, random_state=42)
 
         col = "protocol_type"
         if col in df.columns:
-            for dataset, name in [
-                (df, "df"),
-                (train_set, "train_set"),
-                (val_set, "val_set"),
-                (test_set, "test_set")
+            for data, name in [
+                (df, "Dataset completo"),
+                (train_set, "Train"),
+                (val_set, "Validation"),
+                (test_set, "Test"),
             ]:
-                try:
-                    plt.figure(figsize=(6, 4))
-                    dataset[col].value_counts().plot(kind='bar')
-                    plt.title(f"Distribución de {col} en {name}")
-                    graphs.append(fig_to_base64())
-                    graph_titles.append(f"Distribución de {col} ({name})")
+                plt.figure(figsize=(6, 4))
+                data[col].value_counts().plot(kind="bar")
+                plt.title(f"Distribución de {col} en {name}")
+                graphs.append(fig_to_base64())
+                titles.append(f"{col} — {name}")
 
-                except Exception:
-                    graphs.append(None)
-                    graph_titles.append(f"Distribución de {col} ({name})")
-
-    context = {
-        "graphs": zip(graphs, graph_titles),
+    return render(request, "upload.html", {
+        "graphs": zip(graphs, titles),
         "columns": columns,
         "rows": rows,
-    }
-    return render(request, "upload.html", context)
+        "df_html": df_html,
+    })

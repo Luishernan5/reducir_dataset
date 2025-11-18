@@ -1,172 +1,89 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <title>Dataset NSL-KDD - Procesamiento</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cargar Dataset KDD</title>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: "Poppins", sans-serif;
-      background: linear-gradient(135deg, #4e54c8, #8f94fb);
-      min-height: 100vh;
-      padding: 40px;
-      color: #333;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-    }
-
-    .wrapper {
-      width: 100%;
-      max-width: 1000px;
-      background: white;
-      padding: 30px;
-      border-radius: 20px;
-      box-shadow: 0 12px 25px rgba(0,0,0,0.2);
-      animation: fadeIn 0.8s ease;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .title {
-      text-align: center;
-      font-size: 28px;
-      margin-bottom: 20px;
-      font-weight: 700;
-      color: #4e54c8;
-    }
-
-    .upload-box {
-      background: #f1f2ff;
-      border: 2px dashed #4e54c8;
-      padding: 25px;
-      border-radius: 15px;
-      text-align: center;
-      margin-bottom: 25px;
-      transition: 0.3s;
-    }
-
-    .upload-box:hover {
-      background: #e7e8fd;
-    }
-
-    .upload-box input {
-      margin-top: 10px;
-      font-size: 16px;
-    }
-
-    button {
-      margin-top: 12px;
-      padding: 10px 18px;
-      background: #4e54c8;
-      color: white;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      font-size: 16px;
-      transition: 0.3s;
-    }
-
-    button:hover {
-      background: #3b3fb0;
-    }
-
-    .info-card {
-      background: #f9f9ff;
-      padding: 20px;
-      border-radius: 12px;
-      border-left: 5px solid #4e54c8;
-      margin-bottom: 20px;
-    }
-
-    .graphs-section h2 {
-      text-align: center;
-      font-size: 24px;
-      margin-bottom: 15px;
-      color: #4e54c8;
-    }
-
-    .graphs-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(330px, 1fr));
-      gap: 15px;
-    }
-
-    .graph-card {
-      background: white;
-      border-radius: 15px;
-      padding: 15px;
-      box-shadow: 0px 6px 14px rgba(0,0,0,0.1);
-      animation: fadeIn 0.4s ease;
-    }
-
-    .graph-card img {
-      width: 100%;
-      height: auto;
-      border-radius: 12px;
-    }
-
-    .no-graph {
-      text-align: center;
-      padding: 40px;
-      border: 2px dashed #bbb;
-      border-radius: 15px;
-      color: #666;
-      font-size: 14px;
-    }
-  </style>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+        }
+        h2 {
+            margin-bottom: 10px;
+        }
+        .graph {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        img {
+            max-width: 100%;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        table th, table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+        table th {
+            background: #eee;
+        }
+    </style>
 </head>
-
 <body>
 
-  <div class="wrapper">
-    <div class="title">Procesamiento del Dataset NSL-KDD</div>
-
-    <div class="upload-box">
-      <form method="post" enctype="multipart/form-data">
+<div class="card">
+    <h2>Subir archivo KDD (.arff)</h2>
+    <form method="POST" enctype="multipart/form-data">
         {% csrf_token %}
-        <p><strong>Sube tu archivo .ARFF</strong></p>
-        <input type="file" name="file" accept=".arff" required>
-        <br>
-        <button type="submit">Procesar archivo</button>
-      </form>
-    </div>
+        <input type="file" name="file" required>
+        <button type="submit">Cargar</button>
+    </form>
+</div>
 
-    {% if rows and columns %}
-    <div class="info-card">
-      <strong>Columnas:</strong> {{ columns|length }} <br>
-      <strong>Registros:</strong> {{ rows }} <br>
-      <br>
-      <small><strong>Lista de columnas:</strong> {{ columns|join:", " }}</small>
-    </div>
-    {% endif %}
-
-    {% if graphs %}
-    <div class="graphs-section">
-      <h2>Gráficas generadas</h2>
-
-      <div class="graphs-grid">
-        {% for g, title in graphs %}
-          {% if g %}
-            <div class="graph-card">
-              <h4>{{ title }}</h4>
-              <img src="data:image/png;base64,{{ g }}">
-            </div>
-          {% else %}
-            <div class="no-graph">
-              {{ title }}<br>
-              <em>No disponible</em>
-            </div>
-          {% endif %}
+{% if columns %}
+<div class="card">
+    <h2>Información del Dataset</h2>
+    <p><strong>Columnas:</strong> {{ columns|length }}</p>
+    <p><strong>Filas:</strong> {{ rows }}</p>
+    <p><strong>Nombres de columnas:</strong></p>
+    <ul>
+        {% for c in columns %}
+        <li>{{ c }}</li>
         {% endfor %}
-      </div>
-    </div>
+    </ul>
+</div>
+{% endif %}
+
+{% if df_html %}
+<div class="card">
+    <h2>Vista previa del dataset (primeras 20 filas)</h2>
+    {{ df_html|safe }}
+</div>
+{% endif %}
+
+{% for graph, title in graphs %}
+<div class="card graph">
+    <h2>{{ title }}</h2>
+    {% if graph %}
+        <img src="data:image/png;base64,{{ graph }}">
+    {% else %}
+        <p>No se pudo generar esta gráfica.</p>
     {% endif %}
-  </div>
+</div>
+{% endfor %}
 
 </body>
 </html>
